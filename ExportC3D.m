@@ -20,7 +20,7 @@
 % Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 % -------------------------------------------------------------------------
 
-function ExportC3D(Patient_ID,Session_ID,Session_date,Session_protocol,Folder,Trial,Processing,Units,event,marker,emg,force,grf)
+function ExportC3D(Patient_ID,Session_ID,Session_date,Session_protocol,Folder,Trial,Processing,Units,event,marker,emg,force,grf,rename_files,MD_removed)
 
 % Set new C3D file
 % btkFile = btkNewAcquisition();
@@ -30,10 +30,21 @@ function ExportC3D(Patient_ID,Session_ID,Session_date,Session_protocol,Folder,Tr
 % btkSetAnalogSampleNumberPerFrame(btkFile,ceil(Trial.fanalog/Trial.fmarker));
 btkFile = btkCloneAcquisition(Trial.btk);
 btkSetPointsUnit(btkFile,'marker',Units.output);
-btkClearAnalogs(btkFile);
+% CLEAR MD ACCORDING TO PROCESS PERFORMED
+if grf || force || emg
+    btkClearAnalogs(btkFile);
+end
 btkClearAnalysis(btkFile);
-btkClearEvents(btkFile)
-btkClearPoints(btkFile);
+if marker
+    btkClearPoints(btkFile);
+end
+if grf
+    btkRemoveMetaData(btkFile,'FORCE_PLATFORM');
+end
+% CLEAR MD ACCORDING TO CHOICE (txt file)
+for i = 1:size(MD_removed,1)
+    btkRemoveMetaData(btkFile,MD_removed{i});
+end
 
 % Append events
 if event == 1
@@ -52,8 +63,8 @@ end
 if marker == 1
     if ~isempty(Trial.Marker)
         for i = 1:size(Trial.Marker,2)
-            if ~isempty(Trial.Marker(i).Trajectory.smooth)
-                btkAppendPoint(btkFile,'marker',Trial.Marker(i).label,permute(Trial.Marker(i).Trajectory.smooth,[3,1,2]),zeros(size(permute(Trial.Marker(i).Trajectory.smooth,[3,1,2]),1),1),['Units: ',Trial.Marker(i).Trajectory.units])
+            if ~isempty(Trial.Marker(i).Trajectory.smooth) 
+                btkAppendPoint(btkFile,'marker',Trial.Marker(i).label,permute(Trial.Marker(i).Trajectory.smooth,[3,1,2]),zeros(size(permute(Trial.Marker(i).Trajectory.smooth,[3,1,2]),1),1),['Units: ',Trial.Marker(i).Trajectory.units]);
             else
                 btkAppendPoint(btkFile,'marker',Trial.Marker(i).label,zeros(Trial.n1,3),zeros(Trial.n1,1),'Units: NA');
             end
@@ -141,19 +152,37 @@ elseif contains(Trial.file,'Static_reference1')
 elseif contains(Trial.file,'Static_reference2')
     task = 'STATIC2';
     num = str2num(regexprep(temp,'Static_reference2 ',''));
+elseif contains(Trial.file,'SBNNN')
+    task = 'SBNNN';
+    num = str2num(regexprep(temp,'SBNNN ',''));
+elseif contains(Trial.file,'GBNNN')
+    task = 'GBNNN';
+    num = str2num(regexprep(temp,'GBNNN ',''));
+elseif contains(Trial.file,'LBNNN')
+    task = 'LBNNN';
+    num = str2num(regexprep(temp,'LBNNN ',''));
+elseif contains(Trial.file,'ABNNN')
+    task = 'ABNNN';
+    num = str2num(regexprep(temp,'ABNNN ',''));
 end
 if num < 10
     num = ['0',num2str(num)];
 else
     num = num2str(num);
 end
-newFile = [num2str(Patient_ID),'-',...
-           Session_ID,'-',...
-           Session_date,'-',...
-           regexprep(Session_protocol,'KLAB-UPPERLIMB-',''),'-',...
-           task,'-',...
-           num,...
-           '.c3d'];
+
+if rename_files
+    newFile = [num2str(Patient_ID),'-',...
+               Session_ID,'-',...
+               Session_date,'-',...
+               regexprep(Session_protocol,'KLAB-UPPERLIMB-',''),'-',...
+               task,'-',...
+               num,...
+               '.c3d'];
+else
+    newFile = [temp,...
+               '.c3d'];
+end
 cd(Folder.data);  
 cd ..;
 if ~isfolder('Processed')

@@ -10,13 +10,25 @@
 % SET UNITS
 % -------------------------------------------------------------------------
 % Set units used in the output C3D files
-Units.output = 'm';
+Units.output = 'mm';
 
 % -------------------------------------------------------------------------
 % C3D FILES
 % -------------------------------------------------------------------------
-staticTypes = {'Static_reference1'};
-trialTypes  = {'Static_reference2','Elevation','Rotation','Isometric'};
+staticTypes = {'SBNNN'};
+trialTypes  = {'ABNNN','GBNNN','LBNNN'};
+
+% -------------------------------------------------------------------------
+% EXPORT C3D FILES
+% -------------------------------------------------------------------------
+% rename: Active (1) or Inactive (0)
+rename_files = 0;
+
+% -------------------------------------------------------------------------
+% METADATA TO BE REMOVED
+% -------------------------------------------------------------------------
+MD_removed = { ...
+};
 
 % -------------------------------------------------------------------------
 % EVENT
@@ -283,6 +295,7 @@ Processing.Force.smethod.parameter = 10;
 %                    'marker':      No parameter ([])
 grf = 0;
 grfSet = [1,2,3];
+grfCorrectFP = 0;
 Processing.GRF.zmethod.type       = 'offset'; % If offset, requires GRF calibration data
 Processing.GRF.zmethod.parameter  = [];
 Processing.GRF.fmethod.type       = 'threshold';

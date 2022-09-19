@@ -36,8 +36,10 @@ for i = 1:size(Trial.Marker,2)
         else
             Trial.Marker(i).Trajectory.fill = mean(Trial.Marker(i).Trajectory.raw,3);
         end
-        Trial.n0 = 1;
-        Trial.n1 = 1;  
+        Trial.n0  = 1;
+        Trial.n1  = 1;  
+        newnframe = size(Trial.Marker(i).Trajectory.raw,3);
+        Trial.Marker(i).Trajectory.fill = permute(repmat(permute(Trial.Marker(i).Trajectory.fill,[3,1,2]),[newnframe 1]),[2,3,1]);
     end
     
     % Missing marker trajectory
