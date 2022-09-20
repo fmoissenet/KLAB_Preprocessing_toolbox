@@ -20,7 +20,15 @@
 % Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 % -------------------------------------------------------------------------
 
-function [Trial,Processing] = ProcessGRFSignals(Trial,Calibration,GRF,Processing)
+function [Trial,Processing] = ProcessGRFSignals(Trial,GRF,GRFoffset,Processing)
+
+% -------------------------------------------------------------------------
+% ADJUST GRFoffset SIZE 
+% -------------------------------------------------------------------------
+GRFsize     = size(GRF(1).P,1);
+GRFoffset.P = permute(repmat(GRFoffset.P(:,:,1),[1 GRFsize]),[1,3,2]);
+GRFoffset.F = permute(repmat(GRFoffset.F(:,:,1),[1 GRFsize]),[1,3,2]);
+GRFoffset.M = permute(repmat(GRFoffset.M(:,:,1),[1 GRFsize]),[1,3,2]);
 
 % -------------------------------------------------------------------------
 % COMPUTE CALIBRATION 
@@ -64,43 +72,17 @@ if ~isempty(Trial.GRF) && ~isempty(GRF)
             Trial.GRF(i).Signal.F.raw    = Trial.GRF(i).Signal.F.raw;
             Trial.GRF(i).Signal.M.raw    = Trial.GRF(i).Signal.M.raw;
             Trial.GRF(i).Processing.zero = Processing.GRF.fmethod.type;
-        % Method 2: Mean of a set of frames
-        % Should be adapted to each type of movement
-        elseif strcmp(Processing.GRF.zmethod.type,'frames')
-            if isempty(zmethod.backup)
-                if ~isempty(Trial.GRF(i).Signal.F.raw)
-                    Trial.GRF(i).Signal.P.raw = Trial.GRF(i).Signal.P.raw - ...
-                        mean(Trial.GRF(i).Signal.P.raw(:,:,Processing.GRF.zmethod.parameter(1):Processing.GRF.zmethod.parameter(2)),3);
-                    Trial.GRF(i).Signal.F.raw = Trial.GRF(i).Signal.F.raw - ...
-                        mean(Trial.GRF(i).Signal.F.raw(:,:,Processing.GRF.zmethod.parameter(1):Processing.GRF.zmethod.parameter(2)),3);
-                    Trial.GRF(i).Signal.M.raw = Trial.GRF(i).Signal.M.raw - ...
-                        mean(Trial.GRF(i).Signal.M.raw(:,:,Processing.GRF.zmethod.parameter(1):Processing.GRF.zmethod.parameter(2)),3);
-                end
-                Trial.GRF(i).Processing.zero = Processing.GRF.zmethod.type;
-                % Store offsets
-                Processing.GRF.zmethod.backup.GRF(i).P = mean(Trial.GRF(i).Signal.P.raw(:,:,...
-                    Processing.GRF.zmethod.parameter(1):Processing.GRF.zmethod.parameter(2)),3);
-                Processing.GRF.zmethod.backup.GRF(i).F = mean(Trial.GRF(i).Signal.F.raw(:,:,...
-                    Processing.GRF.zmethod.parameter(1):Processing.GRF.zmethod.parameter(2)),3);
-                Processing.GRF.zmethod.backup.GRF(i).M = mean(Trial.GRF(i).Signal.M.raw(:,:,...
-                    Processing.GRF.zmethod.parameter(1):Processing.GRF.zmethod.parameter(2)),3);
-            else
-                if ~isempty(Trial.GRF(i).Signal.F.raw)
-                    Trial.GRF(i).Signal.P.raw = Trial.GRF(i).Signal.P.raw - Processing.GRF.zmethod.backup.GRF(i).P;
-                    Trial.GRF(i).Signal.F.raw = Trial.GRF(i).Signal.F.raw - Processing.GRF.zmethod.backup.GRF(i).F;
-                    Trial.GRF(i).Signal.M.raw = Trial.GRF(i).Signal.M.raw - Processing.GRF.zmethod.backup.GRF(i).M;
-                end
-                Trial.GRF(i).Processing.zero = Processing.GRF.zmethod.type;
-            end
-        % Method 3: Remove the offset defined during calibration
+        % Method 2: Remove the offset defined during calibration
         elseif strcmp(Processing.GRF.zmethod.type,'offset')
-            if ~isempty(Calibration(1))
-                if ~isempty(Trial.GRF(i).Signal.F.raw)
-                    Trial.GRF(i).Signal.P.raw = Trial.GRF(i).Signal.P.raw - Calibration.GRF(i).Signal.P.offset;
-                    Trial.GRF(i).Signal.F.raw = Trial.GRF(i).Signal.F.raw - Calibration.GRF(i).Signal.F.offset;
-                    Trial.GRF(i).Signal.M.raw = Trial.GRF(i).Signal.M.raw - Calibration.GRF(i).Signal.M.offset;
+            if ~isempty(GRFoffset)
+                if ~isempty(GRFoffset(1))
+                    if ~isempty(Trial.GRF(i).Signal.F.raw)
+                        Trial.GRF(i).Signal.P.raw = Trial.GRF(i).Signal.P.raw - GRFoffset.P;
+                        Trial.GRF(i).Signal.F.raw = Trial.GRF(i).Signal.F.raw - GRFoffset.F;
+                        Trial.GRF(i).Signal.M.raw = Trial.GRF(i).Signal.M.raw - GRFoffset.M;
+                    end
+                    Trial.GRF(i).Processing.zero = Processing.GRF.zmethod.type;
                 end
-                Trial.GRF(i).Processing.zero = Processing.GRF.zmethod.type;
             end
         end
     end

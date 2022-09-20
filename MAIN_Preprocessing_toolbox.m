@@ -19,7 +19,7 @@
 % Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 % -------------------------------------------------------------------------
 
-function [] = MAIN_Preprocessing_toolbox(Patient_ID,Session_ID,Session_date,Session_protocol,folder1,folder2)
+function [] = MAIN_Preprocessing_toolbox(Patient_ID,Session_ID,Session_date,Session_protocol,folder1,folder2,txtFile,c3dFiles)
 
 % -------------------------------------------------------------------------
 % SET FOLDERS
@@ -33,7 +33,6 @@ addpath(genpath(Folder.dependencies));
 % -------------------------------------------------------------------------
 % GET USER COMMANDS
 % -------------------------------------------------------------------------
-txtFile      = 'userCommands.txt';
 userCommands = fileread(txtFile);
 eval(userCommands);
 
@@ -42,7 +41,7 @@ eval(userCommands);
 % -------------------------------------------------------------------------
 % Extract data from C3D files
 cd(Folder.data);
-c3dFiles = dir('*.c3d');
+% c3dFiles = dir('*.c3d');
 k1       = 1;
 k2       = 1;
 for i = 1:size(c3dFiles,1)
@@ -129,7 +128,7 @@ for i = 1%:size(Static,2) % For the moment, only one static allowed in the proce
         Static(i).GRF = [];   
     end
     % Export preprocessed C3D
-    ExportC3D(Patient_ID,Session_ID,Session_date,Session_protocol,Folder,Static(i),Processing,Units,event,marker,emg,force,grf);
+    ExportC3D(Patient_ID,Session_ID,Session_date,Session_protocol,Folder,Static(i),Processing,Units,event,marker,emg,force,grf,rename_files,MD_removed);
 end
 
 % Trial data
@@ -169,12 +168,15 @@ for i = 1:size(Trial,2)
     % Process forceplate signals
     if grf == 1
         Trial(i).GRF          = [];
-        Trial(i).btk          = Correct_FP_C3D_Mokka(Trial(i).btk);
+        if grfCorrectFP
+            Trial(i).btk      = Correct_FP_C3D_Mokka(Trial(i).btk);
+        end
         GRF                   = btkGetForcePlatformWrenches(Trial(i).btk);
         Trial(i)              = InitialiseGRFSignals(grfSet,Trial(i),GRF,Units);
-        [Trial(i),Processing] = ProcessGRFSignals(Trial(i),[],GRF,Processing);
-        clear GRF;
+        GRFoffset             = setGRFoffset(Folder,Processing,Units);
+        [Trial(i),Processing] = ProcessGRFSignals(Trial(i),GRF,GRFoffset,Processing);
+        clear GRF GRFoffset;
     end
     % Export preprocessed C3D
-    ExportC3D(Patient_ID,Session_ID,Session_date,Session_protocol,Folder,Trial(i),Processing,Units,event,marker,emg,force,grf);
+    ExportC3D(Patient_ID,Session_ID,Session_date,Session_protocol,Folder,Trial(i),Processing,Units,event,marker,emg,force,grf,rename_files,MD_removed);
 end
